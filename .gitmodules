@@ -1,0 +1,6 @@
+[submodule "postbound"]
+	path = postbound
+	url = https://github.com/rbergm/PostBOUND
+[submodule "pg_lab"]
+	path = pg_lab
+	url = https://github.com/rbergm/pg_lab
