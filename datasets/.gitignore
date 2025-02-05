@@ -1,0 +1,6 @@
+
+# ignore all directories containing the raw datasets
+*/
+
+# ignore all zipped versions of the datasets
+*.zip
