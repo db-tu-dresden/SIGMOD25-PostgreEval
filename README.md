@@ -4,8 +4,6 @@ This repository contains the experiment scripts, evaluation notebooks and links 
 SIGMOD 2025 publication "An Elephant Under the Microscope: Analyzing the Interaction of Optimizer Components in PostgreSQL"
 ([DOI 10.1145/3709659](https://doi.org/10.1145/3709659)).
 
-> [!warning]
-> This Repo is currently under contruction. Not all files/scripts are available, yet.
 
 ## Structure
 
@@ -23,9 +21,12 @@ Please note that both [pg_lab](https://github.com/rbergm/pg_lab) as well as [Pos
 are frameworks under active development. If you are interested in using them for your own experiments, we kindly ask you to use
 the latest versions available on Github. Both have been much improved since their original publication.
 
+
 ## Reproducibility
 
-TBD
+> [!note]
+> We will add further information regarding reproducibility, as well as an end-to-end experiment pipeline in time for the
+> SIGMOD ARI.
 
 
 ## Errata
