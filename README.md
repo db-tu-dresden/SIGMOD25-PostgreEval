@@ -26,3 +26,21 @@ the latest versions available on Github. Both have been much improved since thei
 ## Reproducibility
 
 TBD
+
+
+## Errata
+
+### Section 4.2
+
+In the original paper we mistakenly duplicated two numbers in the enumeration on page 13. Specifically, the last bullet point
+mentioned that "_73 (simplified) and 62 queries (vanilla) produced the maximum number of jumps at an intermediate stage_".
+These numbers are the same as on the previous bullet point. The correct numbers are 11 (simplified) and 12 queries (vanilla).
+
+### Section 6
+
+In the original paper we mentioned that Stack contains 200 queries which pass the GEQO threshold.
+In fact, there is just a single context for which this is the case and which contains just 100 queries.
+The error was caused by the data frame containing results for both experiment repetitions (once with GEQO enabled and once with
+GEQO disabled).  As a consequence, all of these queries actually change their execution plan at least once while GEQO is
+active (instead of just 50% as claimed in the paper).
+This does not affect the 36 queries that change their execution plan even if GEQO is disabled.
