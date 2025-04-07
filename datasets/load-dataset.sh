@@ -87,13 +87,13 @@ fi
 
 if [ "$FETCH_PLAN_SPACE" = "true" ]; then
     echo "Fetching plan space dataset..."
-    wget -O 02-plan-space.zip https://opara.zih.tu-dresden.de/bitstreams/a8b3bc83-f234-4c09-a55e-6b89ec8b69dc/download
+    wget -O 02-plan-space.zip https://opara.zih.tu-dresden.de/bitstreams/4167fed1-3cfe-4a88-b15f-62ecbdfb3aef/download
     unzip 02-plan-space.zip
 fi
 
 if [ "$FETCH_NON_DETERM" = "true" ]; then
     echo "Fetching non-deterministic dataset..."
-    wget -O 03-non-deterministic.zip https://opara.zih.tu-dresden.de/bitstreams/74003479-c94a-4325-8c86-61fc17da2435/download
+    wget -O 03-non-deterministic.zip https://opara.zih.tu-dresden.de/bitstreams/f1d9527c-f32e-4431-8a03-a9bbb0e7bb9f/download
     unzip 03-non-deterministic.zip
 fi
 
