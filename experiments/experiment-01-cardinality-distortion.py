@@ -181,6 +181,7 @@ def main() -> None:
     parser.add_argument("--cards-source", action="store", type=str, help="")
     parser.add_argument("--queries", action="store", type=str, nargs="+", default=[],
                         help="Simulate misestimates only for the given query labels")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
     parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
     parser.add_argument("--timeout", action="store", type=float, default=DefaultTimeout,
                         help="Max query runtime in seconds. Defaults to 5 minutes.")
@@ -193,6 +194,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
     workload = workloads.job() if args.benchmark == "job" else workloads.stats()
     if args.queries:
         workload = workload & set(args.queries)

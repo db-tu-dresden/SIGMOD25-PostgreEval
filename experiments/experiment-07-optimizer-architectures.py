@@ -347,6 +347,7 @@ def main() -> None:
     parser.add_argument("--fill-factor", type=float, default=BaselineFilling, help="The specific fill factor to use. This is "
                         "required for the 'single' to correctly identify the current DB state and for the 'shift-only' mode "
                         "to identify the target fill factor.")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
     parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
     parser.add_argument("--pg-cmds", nargs="+", default=[], help="Specific Postgres commands to execute before the benchmark. "
                         "*Each command has to be idempotent.*")
@@ -354,6 +355,9 @@ def main() -> None:
                         "and results). Will be created if necessary.")
 
     args = parser.parse_args()
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     if args.db_conn:
         pg_conf = args.db_conn

@@ -141,8 +141,12 @@ def main() -> None:
     parser.add_argument("--join-dir", type=str, help="")
     parser.add_argument("--native-rts", type=str, help="")
     parser.add_argument("--out-dir", type=str, help="")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
 
     args = parser.parse_args()
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     target_queries = pd.read_csv(args.target_queries, converters={"base_join": parse_base_join})
     native_rts = pd.read_csv(args.native_rts)

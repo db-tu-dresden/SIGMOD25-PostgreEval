@@ -91,12 +91,15 @@ def main():
                         "executed in sequence.")
     parser.add_argument("--prewarm", action="store_true", help="Try to pre-warm the buffer pool before executing each query.")
     parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
     parser.add_argument("--out", "-o", action="store", default="", help="Name and location of the output "
                         "CSV file to create.")
 
     args = parser.parse_args()
 
     logging.basicConfig(level=logging_level, format=logging_format)
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     if args.db_conn:
         pg_conf = args.db_conn

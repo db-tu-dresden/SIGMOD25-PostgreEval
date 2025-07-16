@@ -54,6 +54,7 @@ def experiment_native_runtimes(benchmark: Benchmarks) -> None:
 
     start_experiment("experiment-00-native-runtimes.py", {
         "--bench": benchmark,
+        "--workloads-dir": "/ari/postbound/workloads",
         "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
         "--out": out_dir / f"native-runtimes-{benchmark}.csv",
     }, ["--prewarm"])
@@ -67,6 +68,7 @@ def experiment_cardinality_distortion(benchmark: Benchmarks) -> None:
         "--benchmark": benchmark,
         "--base-cards": "actual",
         "--cards-source": f"/ari/datasets/00-base/intermediate-cards-{benchmark}.csv",
+        "--workloads-dir": "/ari/postbound/workloads",
         "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
         "--out": out_dir / f"card-distortion-{benchmark}.csv",
     }, ["--include-vanilla", "--include-default-underest", "--include-default-overest"])
@@ -80,6 +82,7 @@ def experiment_plan_space_analysis(benchmark: Benchmarks) -> None:
         "--bench": benchmark,
         "--native-rts": ResultsDir / "base" / f"native-runtimes-{benchmark}.csv",
         "--cardinalities": f"/ari/datasets/00-base/intermediate-cards-{benchmark}.csv",
+        "--workloads-dir": "/ari/postbound/workloads",
         "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
         "--out-dir": out_dir
     }, [])
@@ -92,6 +95,7 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
     start_experiment("experiment-07-optimizer-architectures.py", {
         "--benchmark": benchmark,
         "--experiments": "native-fixed robust-fixed",
+        "--workloads-dir": "/ari/postbound/workloads",
         "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
         "--out-dir": out_dir
     }, ["full"])

@@ -19,8 +19,12 @@ def main() -> None:
     parser.add_argument("--prewarm", action="store_true", help="Use perfect warm buffers")
     parser.add_argument("--db-config", action="store", default="", help="Path to the database configuration file")
     parser.add_argument("--out", action="store", default="", help="Name of the output file")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
 
     args = parser.parse_args()
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     db_config = args.db_config if args.db_config else ""
 

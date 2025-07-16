@@ -440,9 +440,13 @@ def main() -> None:
     parser.add_argument("--queries", type=str)
     parser.add_argument("--fill-samples", action="store_true")
     parser.add_argument("--max-timeout", type=float, default=None)
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
     parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
 
     args = parser.parse_args()
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     if args.bench == "job":
         benchmark = workloads.job()

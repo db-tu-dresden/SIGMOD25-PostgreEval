@@ -20,12 +20,16 @@ def main() -> None:
     parser.add_argument("--out-dir", "-o", type=str, default="results/local", help="Output directory")
     parser.add_argument("--explain-only", action="store_true", help="Only gather query plans, do not execute them")
     parser.add_argument("--with-geqo", action="store_true", help="Enable the GEQO optimizer")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
 
     args = parser.parse_args()
     outfile_suffix = f"_{args.suffix}" if args.suffix else ""
     repetitions = args.repetitions
     bench_name = args.benchmark
     out_dir = args.out_dir
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     logger = logging.make_logger(enabled=True, prefix=logging.timestamp)
 

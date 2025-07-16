@@ -115,7 +115,11 @@ def main():
     parser.add_argument("--dry", action="store_true", help="Don't actually calculate the intermediates. Instead, determine "
                         "which intermediates would be calculated")
     parser.add_argument("--timeout", action="store", type=int, help="Timeout for each query in seconds")
+    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
     args = parser.parse_args()
+
+    if args.workloads_dir:
+        workloads.workloads_base_dir = args.workloads_dir
 
     benchmark = workloads.job() if args.bench == "job" else workloads.stats()
     determine_intermediates(benchmark, pg_conf=args.pg_conf, out_file=args.out, timeout=args.timeout, simulate_only=args.dry)
