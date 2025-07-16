@@ -347,13 +347,18 @@ def main() -> None:
     parser.add_argument("--fill-factor", type=float, default=BaselineFilling, help="The specific fill factor to use. This is "
                         "required for the 'single' to correctly identify the current DB state and for the 'shift-only' mode "
                         "to identify the target fill factor.")
+    parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
     parser.add_argument("--pg-cmds", nargs="+", default=[], help="Specific Postgres commands to execute before the benchmark. "
                         "*Each command has to be idempotent.*")
     parser.add_argument("--out-dir", "-o", default=OutDir, help="Directory to store the results in (delete markers, baseline "
                         "and results). Will be created if necessary.")
 
     args = parser.parse_args()
-    pg_conf = ".psycopg_connection_job" if args.benchmark == "job" else ".psycopg_connection_stats"
+
+    if args.db_conn:
+        pg_conf = args.db_conn
+    else:
+        pg_conf = ".psycopg_connection_job" if args.benchmark == "job" else ".psycopg_connection_stats"
     pg_instance = postgres.connect(config_file=pg_conf, cache_enabled=False)
 
     for cmd in args.pg_cmds:

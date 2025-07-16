@@ -440,15 +440,18 @@ def main() -> None:
     parser.add_argument("--queries", type=str)
     parser.add_argument("--fill-samples", action="store_true")
     parser.add_argument("--max-timeout", type=float, default=None)
+    parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
 
     args = parser.parse_args()
 
     if args.bench == "job":
         benchmark = workloads.job()
-        pg_instance = postgres.connect(config_file=".psycopg_connection_job")
+        db_conf = args.db_conn if args.db_conn else ".psycopg_connection_job"
+        pg_instance = postgres.connect(config_file=db_conf)
     elif args.bench == "stats":
         benchmark = workloads.stats()
-        pg_instance = postgres.connect(config_file=".psycopg_connection_stats")
+        db_conf = args.db_conn if args.db_conn else ".psycopg_connection_stats"
+        pg_instance = postgres.connect(config_file=db_conf)
     else:
         parser.error(f"Invalid workload specified: '{args.bench}'")
 

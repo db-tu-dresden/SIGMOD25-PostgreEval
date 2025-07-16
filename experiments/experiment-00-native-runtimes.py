@@ -90,6 +90,7 @@ def main():
                         "after each workload iteration. If shuffling is not used, all repetitions are "
                         "executed in sequence.")
     parser.add_argument("--prewarm", action="store_true", help="Try to pre-warm the buffer pool before executing each query.")
+    parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
     parser.add_argument("--out", "-o", action="store", default="", help="Name and location of the output "
                         "CSV file to create.")
 
@@ -97,7 +98,11 @@ def main():
 
     logging.basicConfig(level=logging_level, format=logging_format)
 
-    pg_conf = ".psycopg_connection_job" if args.bench == "job" else ".psycopg_connection_stats"
+    if args.db_conn:
+        pg_conf = args.db_conn
+    else:
+        pg_conf = ".psycopg_connection_job" if args.bench == "job" else ".psycopg_connection_stats"
+
     postgres_db = postgres.connect(config_file=pg_conf)
     postgres_db.cache_enabled = False
     workload = workloads.job() if args.bench == "job" else workloads.stats()

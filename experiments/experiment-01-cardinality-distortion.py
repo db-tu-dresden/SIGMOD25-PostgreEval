@@ -178,8 +178,10 @@ def main() -> None:
     parser.add_argument("--base-cards", action="store", choices=["native", "actual"], default="actual",
                         help="Change baseline cardinalities to use for the misestimates. Allowed values are native "
                         "(using the Postgres optimizer), or the true cardinalities. The latter is the default option.")
+    parser.add_argument("--cards-source", action="store", type=str, help="")
     parser.add_argument("--queries", action="store", type=str, nargs="+", default=[],
                         help="Simulate misestimates only for the given query labels")
+    parser.add_argument("--db-conn", "-c", action="store", help="The path to the database connection file.")
     parser.add_argument("--timeout", action="store", type=float, default=DefaultTimeout,
                         help="Max query runtime in seconds. Defaults to 5 minutes.")
     parser.add_argument("--explain-only", action="store_true", help="Only explain the query plans, do not execute them")
@@ -211,9 +213,16 @@ def main() -> None:
     if distortion_factors.size == 0 and not args.include_vanilla:
         parser.error("At least one distortion factor is required, but none were given.")
 
-    pg_conf = ".psycopg_connection_job" if args.benchmark == "job" else ".psycopg_connection_stats"
-    cardinalities_file = ("results/job/job-intermediate-cardinalities.csv" if args.benchmark == "job"
-                          else "results/stats-ceb/stats-ceb-intermediate-cardinalities.csv")
+    if args.db_conn:
+        pg_conf = args.db_conn
+    else:
+        pg_conf = ".psycopg_connection_job" if args.benchmark == "job" else ".psycopg_connection_stats"
+
+    if args.cards_source:
+        cardinalities_file = args.cards_source
+    else:
+        cardinalities_file = ("results/job/job-intermediate-cardinalities.csv" if args.benchmark == "job"
+                              else "results/stats-ceb/stats-ceb-intermediate-cardinalities.csv")
 
     pg_instance = postgres.connect(config_file=pg_conf)
     card_generator: cardinalities.CardinalityHintsGenerator = (
