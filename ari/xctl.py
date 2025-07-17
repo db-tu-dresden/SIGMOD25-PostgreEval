@@ -49,11 +49,11 @@ def start_experiment(
     for arg, val in args.items():
         if isinstance(val, list):
             formatted_args.append(arg)
-            formatted_args.extend(val)
+            formatted_args.extend(str(v) for v in val)
             continue
 
         formatted_args.append(arg)
-        formatted_args.append(val)
+        formatted_args.append(str(val))
 
     all_args = formatted_args + switches
     args_str = " ".join(all_args)
