@@ -223,7 +223,7 @@ def execute_query(label: str, join_order: jointree.LogicalJoinTree, *,
 
 
 def determine_timeout(label: str, *, min_timeout: float, max_timeout: Optional[float], native_runtime_references: pd.DataFrame,
-                      label_col: str = "label", runtime_col: str = "exec_time") -> float:
+                      label_col: str = "label", runtime_col: str = "execution_time") -> float:
     native_runtime = native_runtime_references.query(f"{label_col} == @label")[runtime_col].median()
     timeout = max(min_timeout, 3 * native_runtime)
     if max_timeout is not None and timeout > max_timeout:

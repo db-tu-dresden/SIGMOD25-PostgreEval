@@ -94,7 +94,7 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
 
     start_experiment("experiment-07-optimizer-architectures.py", {
         "--benchmark": benchmark,
-        "--experiments": "native-fixed robust-fixed",
+        "--experiments": "native-fixed -- experiments robust-fixed",
         "--workloads-dir": "/ari/postbound/workloads",
         "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
         "--out-dir": out_dir
@@ -103,20 +103,20 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Main control script for all experiments.")
-    parser.add_argument("experiment", choices=["all"])
+    parser.add_argument("experiment", choices=["all", "0-base", "1-card-distortion", "2-plan-space", "3-beyond-textbook"])
 
     args = parser.parse_args()
 
-    if args.experiment == "all":
+    if args.experiment in ["all", "0-base"]:
         experiment_native_runtimes("job")
 
-    if args.experiment == "all":
+    if args.experiment in ["all", "1-card-distortion"]:
         experiment_cardinality_distortion("job")
 
-    if args.experiment == "all":
+    if args.experiment in ["all", "2-plan-space"]:
         experiment_plan_space_analysis("job")
 
-    if args.experiment == "all":
+    if args.experiment in ["all", "3-beyond-textbook"]:
         experiment_architecture_ablation("job")
 
 
