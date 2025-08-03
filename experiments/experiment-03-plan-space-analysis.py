@@ -45,7 +45,7 @@ class SamplingReport:
     sampling_duration: float
     n_requested: int
     n_produced: int
-    generator: SampleGenerator = "sampled"
+    generator: SampleGenerator = "sampled_guided"
 
 
 SamplingResult = collections.namedtuple("SamplingResult", ["plans", "reports"])
@@ -104,7 +104,7 @@ def sample_uniform_base_table_plans(
     card_provider: cardinalities.PreComputedCardinalities,
     pg_instance: postgres.PostgresInterface,
 ) -> SamplingResult:
-    cost_areas = ["lower", "higher", "close"]
+    cost_areas: list[CostArea] = ["lower", "higher", "close"]
     base_tables = query.tables()
     plans_per_table = math.ceil(n_plans / len(base_tables))
 
@@ -283,7 +283,9 @@ def execute_query(
         query_plan = postgres.PostgresExplainPlan(raw_explain_output)
         total_runtime = (runtime_end - runtime_start).total_seconds()
         timeout = False
-    except (TimeoutError, db.DatabaseServerError, db.DatabaseUserError):
+    except (TimeoutError, db.DatabaseServerError):
+        database.reset_connection()
+        database.apply_configuration(NoGeQO)
         hinted_query = transform.as_explain(hinted_query)
         raw_explain_output = database.execute_query(hinted_query, cache_enabled=False)
         query_plan = postgres.PostgresExplainPlan(raw_explain_output)
@@ -291,7 +293,10 @@ def execute_query(
         timeout = True
 
     return ExperimentResult(
-        label=label, runtime=total_runtime, timeout=timeout, query_plan=query_plan
+        label=label,
+        runtime=total_runtime,
+        timeout=timeout,
+        query_plan=query_plan,
     )
 
 
@@ -519,7 +524,9 @@ def fill_missed_samples(
             current_report = current_report.iloc[0]
             if current_report["generator"] == "exhaustive":
                 logger(
-                    "Skipping query", label, "as it was already sampled exhaustively"
+                    "Skipping query",
+                    label,
+                    "as it was already sampled exhaustively",
                 )
                 continue
 
@@ -662,7 +669,7 @@ def main() -> None:
             cardinalities_file=args.cardinalities,
         )
     else:
-        queries = set(args.queries.split(",")) if args.queries is not None else []
+        queries = set(args.queries.split(",")) if args.queries is not None else set()
         benchmark_missing_queries(
             args.out_dir,
             benchmark=benchmark,
