@@ -460,7 +460,7 @@ def main() -> None:
         "experiment",
         type=str,
         action="store",
-        choices=experiments.keys(),
+        choices=["all"] + list(experiments.keys()),
         nargs="+",
         default=["all"],
     )
