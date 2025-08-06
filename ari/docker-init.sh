@@ -13,10 +13,13 @@ if [ -z "$(ls /ari)" ] ; then
     echo "Setting up pg_lab..."
     cd /ari/pg_lab
     ./postgres-setup.sh --stop
+
+    echo "Configuring Postgres server..."
     source ./postgres-start.sh
     cd /ari/postbound/postgres
-    python3 postgres-config-generator.py --out pg-conf.sql --disk-type SSD "/ari/pg_lab/postgres-server/dist/data"
+    python3 postgres-config-generator.py --out pg-conf.sql --disk-type SSD /ari/pg_lab/postgres-server/dist/data
     psql -f pg-conf.sql
+    cd /ari/pg_lab
     source ./postgres-stop.sh
     source ./postgres-start.sh
 
