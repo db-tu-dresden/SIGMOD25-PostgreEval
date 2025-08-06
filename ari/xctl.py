@@ -12,7 +12,7 @@ from typing import Literal, Optional
 
 import pandas as pd
 
-Benchmarks = Literal["job", "stats"]
+Benchmarks = Literal["job", "stats", "stack"]
 ResultsDir = Path("/ari/results")
 
 
@@ -25,8 +25,28 @@ class LogEntry:
     args: str
 
 
-def has_db() -> bool:
-    pass
+def has_db(benchmark: Benchmarks) -> bool:
+    psql_res = subprocess.run(
+        [
+            "psql",
+            "-t",
+            "-c",
+            "select datname from pg_database where datistemplate is false",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    all_dbs = {db.strip() for db in psql_res.stdout.splitlines()}
+
+    if benchmark == "job":
+        return "job" in all_dbs or "imdb" in all_dbs
+    return benchmark in all_dbs
+
+
+def console(*args) -> None:
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(timestamp, *args)
 
 
 def log(entry: LogEntry, log_path: str | Path) -> None:
@@ -414,49 +434,60 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
 
 
 def main() -> None:
+    experiments = {
+        "0-base": experiment_native_runtimes,
+        "1-card-distortion": experiment_cardinality_distortion,
+        "2-distortion-ablation": experiment_distortion_ablation,
+        "3-plan-space": experiment_plan_space_analysis,
+        "4-base-join-impact": experiment_base_join_impact,
+        "5-analyze-stability": experiment_analyze_stability,
+        "6-analyze-shift": experiment_analyze_stability_shift,
+        "7-beyond-textbook": experiment_architecture_ablation,
+    }
+    benchmarks = ["job", "stats", "stack"]
+
     parser = argparse.ArgumentParser(
         description="Main control script for all experiments."
     )
     parser.add_argument(
+        "--benchmark",
+        type=str,
+        action="store",
+        choices=["all", "job", "stats", "stack"],
+        default="job",
+    )
+    parser.add_argument(
         "experiment",
-        choices=[
-            "all",
-            "0-base",
-            "1-card-distortion",
-            "2-distortion-ablation",
-            "3-plan-space",
-            "4-base-join-impact",
-            "5-analyze-stability",
-            "6-analyze-shift",
-            "7-beyond-textbook",
-        ],
+        type=str,
+        action="store",
+        choices=experiments.keys(),
+        nargs="+",
+        default=["all"],
     )
 
     args = parser.parse_args()
 
-    if args.experiment in ["all", "0-base"]:
-        experiment_native_runtimes("job")
+    if args.benchmark == "all":
+        selected_benchmarks = [bench for bench in benchmarks if has_db(bench)]
+    elif not has_db(args.benchmark):
+        raise ValueError(
+            f"Benchmark {args.benchmark} has not been set-up during container initialization."
+        )
+    else:
+        selected_benchmarks = [args.benchmark]
+    console("Selected benchmarks:", selected_benchmarks)
 
-    if args.experiment in ["all", "1-card-distortion"]:
-        experiment_cardinality_distortion("job")
+    if "all" in args.experiment:
+        selected_experiments = experiments.keys()
+    else:
+        selected_experiments = args.experiment
 
-    if args.experiment in ["all", "2-distortion-ablation"]:
-        experiment_distortion_ablation("job")
+    for exp in selected_experiments:
+        start_experiment = experiments[exp]
 
-    if args.experiment in ["all", "3-plan-space"]:
-        experiment_plan_space_analysis("job")
-
-    if args.experiment in ["all", "4-base-join-impact"]:
-        experiment_base_join_impact("job")
-
-    if args.experiment in ["all", "5-analyze-stability"]:
-        experiment_analyze_stability("job")
-
-    if args.experiment in ["all", "6-analyze-shift"]:
-        experiment_analyze_stability_shift("job")
-
-    if args.experiment in ["all", "7-beyond-textbook"]:
-        experiment_architecture_ablation("job")
+        for bench in selected_benchmarks:
+            console("Running experiment", exp, "for benchmark", bench)
+            start_experiment(bench)
 
 
 if __name__ == "__main__":
