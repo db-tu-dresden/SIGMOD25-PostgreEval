@@ -2,6 +2,8 @@
 # ARI experiment control script
 
 import argparse
+import itertools
+import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,6 +18,7 @@ ResultsDir = Path("/ari/results")
 
 @dataclass
 class LogEntry:
+    label: str
     script: str
     event: Literal["start", "end"]
     timestamp: datetime
@@ -29,7 +32,9 @@ def has_db() -> bool:
 def log(entry: LogEntry, log_path: str | Path) -> None:
     log_path = Path(log_path)
     if not log_path.exists():
-        skeleton = pd.DataFrame(columns=["script", "event", "timestamp", "args"])
+        skeleton = pd.DataFrame(
+            columns=["label", "script", "event", "timestamp", "args"]
+        )
         skeleton.to_csv(log_path, index=False)
 
     log_df = pd.DataFrame([entry])
@@ -40,9 +45,12 @@ def start_experiment(
     script: str,
     args: Optional[dict[str, str | list[str]]] = None,
     switches: Optional[list[str]] = None,
+    *,
+    label: str = "",
 ) -> None:
     args = args or {}
     switches = switches or []
+    label = label or script.removesuffix(".py")
     absolute_path = Path("/ari/experiments") / script
 
     formatted_args: list[str] = []
@@ -59,12 +67,24 @@ def start_experiment(
     args_str = " ".join(all_args)
 
     log(
-        LogEntry(script=script, event="start", timestamp=datetime.now(), args=args_str),
+        LogEntry(
+            label=label,
+            script=script,
+            event="start",
+            timestamp=datetime.now(),
+            args=args_str,
+        ),
         "/ari/results/progress.log",
     )
     subprocess.run(["python3", absolute_path] + all_args)
     log(
-        LogEntry(script=script, event="end", timestamp=datetime.now(), args=args_str),
+        LogEntry(
+            label=label,
+            script=script,
+            event="end",
+            timestamp=datetime.now(),
+            args=args_str,
+        ),
         "/ari/results/progress.log",
     )
 
@@ -82,6 +102,7 @@ def experiment_native_runtimes(benchmark: Benchmarks) -> None:
             "--out": out_dir / f"native-runtimes-{benchmark}.csv",
         },
         ["--prewarm"],
+        label=f"native-runtimes-{benchmark}",
     )
 
 
@@ -104,11 +125,121 @@ def experiment_cardinality_distortion(benchmark: Benchmarks) -> None:
             "--include-default-underest",
             "--include-default-overest",
         ],
+        label=f"card-distortion-{benchmark}",
     )
 
 
+def distortion_ablation_settings(stage: int, enable_cout: bool) -> str:
+    settings: list[str] = ["LOAD 'coutstar';"]
+    settings.append(
+        "SET enable_cout TO on;" if enable_cout else "SET enable_cout TO off;"
+    )
+
+    # minimal required operators
+    settings.extend(["SET enable_seqscan TO on;", "SET enable_nestloop TO on;"])
+
+    # all basic operators
+    if stage >= 2:
+        settings.extend(
+            [
+                "SET enable_indexscan TO on;",
+                "SET enable_hashjoin TO on;",
+                "SET enable_mergejoin TO on;",
+                "SET enable_sort TO on;",
+            ]
+        )
+    else:
+        settings.extend(
+            [
+                "SET enable_indexscan TO off;",
+                "SET enable_hashjoin TO off;",
+                "SET enable_mergejoin TO off;",
+                "SET enable_sort TO off;",
+            ]
+        )
+
+    # optimized basic operators
+    if stage >= 3:
+        settings.extend(
+            [
+                "SET enable_indexonlyscan TO on;",
+                "SET enable_bitmapscan TO on;",
+                "SET enable_hashagg TO on;",
+                "SET enable_incremental_sort TO on;",
+            ]
+        )
+    else:
+        settings.extend(
+            [
+                "SET enable_indexonlyscan TO off;",
+                "SET enable_bitmapscan TO off;",
+                "SET enable_hashagg TO off;",
+                "SET enable_incremental_sort TO off;",
+            ]
+        )
+
+    # intermediate operators
+    if stage >= 4:
+        settings.extend(["SET enable_material TO on;", "SET enable_memoize TO on;"])
+    else:
+        settings.extend(["SET enable_material TO off;", "SET enable_memoize TO off;"])
+
+    # parallelism settings
+    if stage >= 5:
+        settings.extend(
+            ["SET enable_gathermerge TO on;", "SET enable_parallel_hash TO on;"]
+        )
+    else:
+        # for disabling parallelism we also need to set the max parallel workers!
+        settings.extend(
+            [
+                "SET max_parallel_workers_per_gather TO 0;",
+                "SET enable_gathermerge TO off;",
+                "SET enable_parallel_hash TO off;",
+            ]
+        )
+
+    return "\n".join(settings)
+
+
+def experiment_distortion_ablation(benchmark: Benchmarks) -> None:
+    base_out_dir = ResultsDir / "experiment-02-distortion-ablation"
+
+    stages = range(1, 5 + 1)
+    cout = [True, False]
+
+    for stage, enable_cout in itertools.product(stages, cout):
+        out_dir = base_out_dir / benchmark
+        out_dir.mkdir(parents=True, exist_ok=True)
+        cost_model_suffix = "cout" if enable_cout else "vanilla"
+        out_file = (
+            out_dir
+            / f"{benchmark}-distortion-{cost_model_suffix}-cost-stage-{stage}.csv"
+        )
+
+        start_experiment(
+            "experiment-01-cardinality-distortion.py",
+            {
+                "--benchmark": benchmark,
+                "--base-cards": "actual",
+                "--cards-source": f"/ari/datasets/00-base/intermediate-cards-{benchmark}.csv",
+                "--workloads-dir": "/ari/postbound/workloads",
+                "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+                "--pg-conf": distortion_ablation_settings(stage, enable_cout),
+                "--out": out_file,
+            },
+            [
+                "--include-vanilla",
+                "--include-default-underest",
+                "--include-default-overest",
+                "--explain-only",
+            ],
+            label=f"distortion-ablation-{benchmark}-stage-{stage}-{cost_model_suffix}",
+        )
+
+
 def experiment_plan_space_analysis(benchmark: Benchmarks) -> None:
-    out_dir = ResultsDir / "experiment-03-plan-space-analysis"
+    out_dir = ResultsDir / "experiment-03-plan-space-analysis" / benchmark
     out_dir.mkdir(parents=True, exist_ok=True)
 
     start_experiment(
@@ -122,7 +253,144 @@ def experiment_plan_space_analysis(benchmark: Benchmarks) -> None:
             "--out-dir": out_dir,
         },
         [],
+        label=f"plan-space-analysis-{benchmark}",
     )
+
+
+def experiment_base_join_impact(benchmark: Benchmarks) -> None:
+    plan_space_dir = ResultsDir / "experiment-03-plan-space-analysis" / benchmark
+    if not plan_space_dir.exists():
+        raise FileNotFoundError(
+            f"Plan space analysis results for {benchmark} not found. "
+            "Please run the plan space analysis experiment first."
+        )
+
+    resample_file = plan_space_dir / f"{benchmark}-base-join-queries-f1.csv"
+    subprocess.run(
+        [
+            "python3",
+            "/ari/ari/base-join-analysis.py",
+            "--workload",
+            benchmark,
+            "--out",
+            resample_file,
+        ],
+    )
+
+    out_dir = ResultsDir / "experiment-04-base-join-impact" / benchmark
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    start_experiment(
+        "experiment-04-base-join-impact.py",
+        {
+            "--target-queries": resample_file,
+            "--join-dir": plan_space_dir,
+            "--native-rts": ResultsDir / "base" / f"native-runtimes-{benchmark}.csv",
+            "--out-dir": out_dir,
+            "--workloads-dir": "/ari/postbound/workloads",
+            "--workload": benchmark,
+            "--cards": f"/ari/datasets/00-base/intermediate-cards-{benchmark}.csv",
+            "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+        },
+        [],
+        label=f"base-join-impact-{benchmark}",
+    )
+
+
+def experiment_analyze_stability(benchmark: Benchmarks) -> None:
+    out_dir = ResultsDir / "experiment-05-analyze-stability" / benchmark
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    start_experiment(
+        "experiment-05-analyze-stability.py",
+        {
+            "--benchmark": benchmark,
+            "--workloads-dir": "/ari/postbound/workloads",
+            "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+            "--out-dir": out_dir,
+            "--repetitions": 10,
+            "--suffix": "dynprog",
+        },
+        [],
+        label=f"analyze-stability-{benchmark}-dynprog",
+    )
+
+    start_experiment(
+        "experiment-05-analyze-stability.py",
+        {
+            "--benchmark": benchmark,
+            "--workloads-dir": "/ari/postbound/workloads",
+            "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+            "--out-dir": out_dir,
+            "--repetitions": 10,
+            "--suffix": "geqo",
+            "--min-tables": 12,
+        },
+        ["--with-geqo"],
+        label=f"analyze-stability-{benchmark}-geqo",
+    )
+
+
+def reset_db(benchmark: Benchmarks) -> None:
+    os.system(f"cd /ari/postbound/postgres && ./workload-{benchmark}-setup.sh --force")
+
+
+def experiment_analyze_stability_shift(benchmark: Benchmarks) -> None:
+    base_dir = ResultsDir / "experiment-06-analyze-stability-shift" / benchmark
+    fill_factors = [0.05, 0.1, 0.25, 0.5, 0.75]
+
+    for fill_factor in fill_factors:
+        out_dir = base_dir / f"fill-factor{fill_factor}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        subprocess.run(
+            [
+                "python3",
+                "/ari/experiments/experiment-07-optimizer-architectures.py",
+                "--benchmark",
+                benchmark,
+                "--workloads-dir",
+                "/ari/postbound/workloads",
+                "--db-conn",
+                f"/ari/.psycopg_connection_{benchmark}",
+                "--fill-factor",
+                fill_factor,
+                "--out-dir",
+                out_dir,
+                "shift only",
+            ]
+        )
+
+        start_experiment(
+            "experiment-05-analyze-stability.py",
+            {
+                "--benchmark": benchmark,
+                "--workloads-dir": "/ari/postbound/workloads",
+                "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+                "--out-dir": out_dir,
+                "--repetitions": 10,
+                "--suffix": "dynprog",
+            },
+            ["--explain-only"],
+            label=f"analyze-shift-{benchmark}-dynprog-ff-{fill_factor}",
+        )
+
+        start_experiment(
+            "experiment-05-analyze-stability.py",
+            {
+                "--benchmark": benchmark,
+                "--workloads-dir": "/ari/postbound/workloads",
+                "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+                "--out-dir": out_dir,
+                "--repetitions": 10,
+                "--suffix": "geqo",
+                "--min-tables": 12,
+            },
+            ["--with-geqo", "--explain-only"],
+            label=f"analyze-shift-{benchmark}-geqo-ff-{fill_factor}",
+        )
+
+    reset_db(benchmark)
 
 
 def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
@@ -139,7 +407,10 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
             "--out-dir": out_dir,
         },
         ["full"],
+        label=f"beyond-textbook-{benchmark}",
     )
+
+    reset_db(benchmark)
 
 
 def main() -> None:
@@ -152,8 +423,12 @@ def main() -> None:
             "all",
             "0-base",
             "1-card-distortion",
+            "2-distortion-ablation",
             "3-plan-space",
-            "5-beyond-textbook",
+            "4-base-join-impact",
+            "5-analyze-stability",
+            "6-analyze-shift",
+            "7-beyond-textbook",
         ],
     )
 
@@ -165,10 +440,22 @@ def main() -> None:
     if args.experiment in ["all", "1-card-distortion"]:
         experiment_cardinality_distortion("job")
 
+    if args.experiment in ["all", "2-distortion-ablation"]:
+        experiment_distortion_ablation("job")
+
     if args.experiment in ["all", "3-plan-space"]:
         experiment_plan_space_analysis("job")
 
-    if args.experiment in ["all", "5-beyond-textbook"]:
+    if args.experiment in ["all", "4-base-join-impact"]:
+        experiment_base_join_impact("job")
+
+    if args.experiment in ["all", "5-analyze-stability"]:
+        experiment_analyze_stability("job")
+
+    if args.experiment in ["all", "6-analyze-shift"]:
+        experiment_analyze_stability_shift("job")
+
+    if args.experiment in ["all", "7-beyond-textbook"]:
         experiment_architecture_ablation("job")
 
 

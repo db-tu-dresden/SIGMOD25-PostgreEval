@@ -15,7 +15,7 @@ for fill_factor in ${FILL_FACTORS[@]}; do
         shift-only
 
     echo "$(date --rfc-3339=s) Running stability experiment for fill factor $fill_factor"
-    python3 -m experiments.experiment-pg-analyze-stability \
+    python3 -m experiments.experiment-05-analyze-stability \
         --benchmark job \
         --suffix "fill_factor_$fill_factor" \
         --out-dir "results/job/job-stats-stability/fill-factor-$fill_factor" \
