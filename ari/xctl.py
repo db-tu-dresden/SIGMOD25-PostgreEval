@@ -276,6 +276,20 @@ def experiment_plan_space_analysis(benchmark: Benchmarks) -> None:
         label=f"plan-space-analysis-{benchmark}",
     )
 
+    start_experiment(
+        "experiment-03-plan-space-analysis.py",
+        {
+            "--bench": benchmark,
+            "--native-rts": ResultsDir / "base" / f"native-runtimes-{benchmark}.csv",
+            "--cardinalities": f"/ari/datasets/00-base/intermediate-cards-{benchmark}.csv",
+            "--workloads-dir": "/ari/postbound/workloads",
+            "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+            "--out-dir": out_dir,
+        },
+        ["--fill-samples"],
+        label=f"plan-space-analysis-{benchmark}-gaps",
+    )
+
 
 def experiment_base_join_impact(benchmark: Benchmarks) -> None:
     plan_space_dir = ResultsDir / "experiment-03-plan-space-analysis" / benchmark
