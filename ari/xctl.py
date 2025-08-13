@@ -447,9 +447,9 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
     reset_db(benchmark)
 
 
-def evaluate_results(notebook: str, *, experiment: str) -> None:
+def evaluate_results(notebook: str) -> None:
     notebook_path = Path("/ari/ari/eval") / f"{notebook}.ipynb"
-    out_dir = ResultsDir / "eval" / experiment
+    out_dir = ResultsDir / "eval" / "summaries"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     subprocess.run(["jupyter", "execute", "--inplace", notebook_path])
@@ -470,13 +470,13 @@ def main() -> None:
         "7-beyond-textbook": experiment_architecture_ablation,
     }
     eval_notebooks = {
-        "1-card-distortion": "1-Card-Distortion",
-        "2-distortion-ablation": "2-Distortion-Ablation",
-        "3-plan-space": "3-Plan-Space",
-        "4-base-join-impact": "4-Base-Joins",
-        "5-analyze-stability": "5-Analyze-Stability",
-        "6-analyze-shift": "6-Analyze-Shift",
-        "7-beyond-textbook": "7-Beyond-Textbook",
+        "1-card-distortion": "01-Card-Distortion",
+        "2-distortion-ablation": "02-Distortion-Ablation",
+        "3-plan-space": "03-Plan-Space",
+        "4-base-join-impact": "04-Base-Joins",
+        "5-analyze-stability": "05-Analyze-Stability",
+        "6-analyze-shift": "06-Analyze-Shift",
+        "7-beyond-textbook": "07-Beyond-Textbook",
     }
     benchmarks = ["job", "stats", "stack"]
 
@@ -543,7 +543,7 @@ def main() -> None:
         if args.mode == "full" or args.mode == "eval":
             console("Evaluating results for experiment", exp)
             notebook = eval_notebooks[exp]
-            evaluate_results(notebook, experiment=exp)
+            evaluate_results(notebook)
 
 
 if __name__ == "__main__":
