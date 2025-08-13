@@ -1,5 +1,6 @@
 FROM ubuntu:noble
 
+EXPOSE 8888
 STOPSIGNAL SIGINT
 
 RUN apt update && apt install -y \
@@ -27,7 +28,7 @@ RUN useradd -ms /bin/bash $USERNAME ; \
     usermod -aG sudo $USERNAME ; \
     echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/$USER
 USER $USERNAME
-COPY ari/docker-init.sh /docker-init.sh
+COPY docker-init.sh /docker-init.sh
 
 VOLUME /ari
 
