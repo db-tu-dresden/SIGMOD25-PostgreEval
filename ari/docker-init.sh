@@ -33,6 +33,7 @@ if [ -z "$(ls /ari)" ] ; then
     pip install build wheel
     python3 -m build
     pip install dist/postbound-0.6.2-py3-none-any.whl
+    pip install -r /ari/ari/eval/requirements.txt
 
     if [ "$SETUP_JOB" == "true" ] ; then
         echo "Setting up JOB / IMDB instance..."
