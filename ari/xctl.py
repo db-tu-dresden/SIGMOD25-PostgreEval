@@ -447,6 +447,17 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
     reset_db(benchmark)
 
 
+def evaluate_results(notebook: str, *, experiment: str) -> None:
+    notebook_path = Path("/ari/ari/eval") / f"{notebook}.ipynb"
+    out_dir = ResultsDir / "eval" / experiment
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    subprocess.run(["jupyter", "execute", "--inplace", notebook_path])
+    subprocess.run(
+        ["jupyter", "nbconvert", "--to", "pdf", "--output-dir", out_dir, notebook_path]
+    )
+
+
 def main() -> None:
     experiments = {
         "0-base": experiment_native_runtimes,
@@ -458,17 +469,39 @@ def main() -> None:
         "6-analyze-shift": experiment_analyze_stability_shift,
         "7-beyond-textbook": experiment_architecture_ablation,
     }
+    eval_notebooks = {
+        "1-card-distortion": "1-Card-Distortion",
+        "2-distortion-ablation": "2-Distortion-Ablation",
+        "3-plan-space": "3-Plan-Space",
+        "4-base-join-impact": "4-Base-Joins",
+        "5-analyze-stability": "5-Analyze-Stability",
+        "6-analyze-shift": "6-Analyze-Shift",
+        "7-beyond-textbook": "7-Beyond-Textbook",
+    }
     benchmarks = ["job", "stats", "stack"]
 
     parser = argparse.ArgumentParser(
         description="Main control script for all experiments."
     )
     parser.add_argument(
+        "--mode",
+        type=str,
+        action="store",
+        choices=["full", "data", "eval"],
+        default="full",
+        help="Whether to only gather the experiment results (data), "
+        "evaluate the results from a previous run (eval), "
+        "or do both (full).",
+    )
+    parser.add_argument(
         "--benchmark",
         type=str,
         action="store",
-        choices=["all", "job", "stats", "stack"],
+        choices=["all"] + benchmarks,
         default="job",
+        help="The benchmark/dataset to run the experiments on. "
+        "Note that the Stack benchmark can only be used for experiment 5 and "
+        "will be ignored for all others.",
     )
     parser.add_argument(
         "experiment",
@@ -477,6 +510,9 @@ def main() -> None:
         choices=["all"] + list(experiments.keys()),
         nargs="+",
         default=["all"],
+        help="The experiments to execute. Can be any combination of experiments or all. "
+        "Note that experiment 4 requires the results from experiment 3 and "
+        "almost all experiments require the data from experiment 0.",
     )
 
     args = parser.parse_args()
@@ -499,9 +535,15 @@ def main() -> None:
     for exp in selected_experiments:
         start_experiment = experiments[exp]
 
-        for bench in selected_benchmarks:
-            console("Running experiment", exp, "for benchmark", bench)
-            start_experiment(bench)
+        if args.mode == "full" or args.mode == "data":
+            for bench in selected_benchmarks:
+                console("Running experiment", exp, "for benchmark", bench)
+                start_experiment(bench)
+
+        if args.mode == "full" or args.mode == "eval":
+            console("Evaluating results for experiment", exp)
+            notebook = eval_notebooks[exp]
+            evaluate_results(notebook, experiment=exp)
 
 
 if __name__ == "__main__":
