@@ -388,7 +388,7 @@ def experiment_analyze_stability_shift(benchmark: Benchmarks) -> None:
                 "--db-conn",
                 f"/ari/.psycopg_connection_{benchmark}",
                 "--fill-factor",
-                fill_factor,
+                str(fill_factor),
                 "--out-dir",
                 out_dir,
                 "shift only",
