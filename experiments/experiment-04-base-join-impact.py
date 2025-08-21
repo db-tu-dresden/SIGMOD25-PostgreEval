@@ -150,7 +150,7 @@ def determine_timeout(
     min_timeout: float,
     native_runtime_references: pd.DataFrame,
     label_col: str = "label",
-    runtime_col: str = "exec_time",
+    runtime_col: str = "execution_time",
 ) -> float:
     native_runtime = native_runtime_references.query(f"{label_col} == @label")[
         runtime_col
@@ -266,10 +266,10 @@ def main() -> None:
         args.target_queries, converters={"base_join": parse_base_join}
     )
     native_rts = pd.read_csv(args.native_rts)
-    native_rts["median_rt"] = native_rts.groupby("label")["exec_time"].transform(
+    native_rts["median_rt"] = native_rts.groupby("label")["execution_time"].transform(
         "median"
     )
-    native_rts = native_rts.query("exec_time == median_rt").copy()
+    native_rts = native_rts.query("execution_time == median_rt").copy()
 
     for _, row in target_queries.iterrows():
         label: str = row.label
