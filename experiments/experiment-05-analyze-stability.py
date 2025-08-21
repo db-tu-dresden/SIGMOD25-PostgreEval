@@ -1,26 +1,57 @@
-
 from __future__ import annotations
 
 import argparse
 import os
 
 from postbound.db import postgres
-from postbound.experiments import runner, workloads, analysis
+from postbound.experiments import analysis, runner, workloads
 from postbound.util import logging
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Experiment to determine how much query plans are influenced by "
-                                     "different statistics samples.")
-    parser.add_argument("--benchmark", "-b", type=str, choices=["job", "stats", "stack"], default="job",
-                        help="Benchmark to use")
-    parser.add_argument("--min-tables", type=int, default=0, help="Only include queries with at least that many tables")
-    parser.add_argument("--repetitions", "-r", type=int, default=10, help="Number of repetitions")
-    parser.add_argument("--suffix", "-s", type=str, default="", help="Output file suffix")
-    parser.add_argument("--out-dir", "-o", type=str, default="results/local", help="Output directory")
-    parser.add_argument("--explain-only", action="store_true", help="Only gather query plans, do not execute them")
-    parser.add_argument("--with-geqo", action="store_true", help="Enable the GEQO optimizer")
-    parser.add_argument("--workloads-dir", action="store", help="The directory where the workloads are stored.")
+    parser = argparse.ArgumentParser(
+        description="Experiment to determine how much query plans are influenced by "
+        "different statistics samples."
+    )
+    parser.add_argument(
+        "--benchmark",
+        "-b",
+        type=str,
+        choices=["job", "stats", "stack"],
+        default="job",
+        help="Benchmark to use",
+    )
+    parser.add_argument(
+        "--min-tables",
+        type=int,
+        default=0,
+        help="Only include queries with at least that many tables",
+    )
+    parser.add_argument(
+        "--repetitions", "-r", type=int, default=10, help="Number of repetitions"
+    )
+    parser.add_argument(
+        "--suffix", "-s", type=str, default="", help="Output file suffix"
+    )
+    parser.add_argument(
+        "--out-dir", "-o", type=str, default="results/local", help="Output directory"
+    )
+    parser.add_argument(
+        "--explain-only",
+        action="store_true",
+        help="Only gather query plans, do not execute them",
+    )
+    parser.add_argument(
+        "--with-geqo", action="store_true", help="Enable the GEQO optimizer"
+    )
+    parser.add_argument(
+        "--workloads-dir",
+        action="store",
+        help="The directory where the workloads are stored.",
+    )
+    parser.add_argument(
+        "--db-conn", action="store", help="Config file for the database connection."
+    )
 
     args = parser.parse_args()
     outfile_suffix = f"_{args.suffix}" if args.suffix else ""
@@ -40,39 +71,61 @@ def main() -> None:
     # database- and workload-setup is a bit repetitive.
     match bench_name:
         case "job":
-            pg_instance = postgres.connect(config_file=".psycopg_connection_job")
+            db_conn = args.db_conn or ".psycopg_connection_job"
+            pg_instance = postgres.connect(config_file=db_conn)
             benchmark = workloads.job()
         case "stats":
-            pg_instance = postgres.connect(config_file=".psycopg_connection_stats")
+            db_conn = args.db_conn or ".psycopg_connection_stats"
+            pg_instance = postgres.connect(config_file=db_conn)
             benchmark = workloads.stats()
         case "stack":
-            pg_instance = postgres.connect(config_file=".psycopg_connection_stack")
+            db_conn = args.db_conn or ".psycopg_connection_stack"
+            pg_instance = postgres.connect(config_file=db_conn)
             benchmark = workloads.stack()
         case _:
             raise ValueError(f"Unknown benchmark {bench_name}")
 
     if args.min_tables:
-        benchmark = benchmark.filter_by(lambda __, query: len(query.tables()) >= args.min_tables)
+        benchmark = benchmark.filter_by(
+            lambda __, query: len(query.tables()) >= args.min_tables
+        )
 
     use_explain: bool = args.explain_only
     use_analyze = not use_explain
     use_prewarm = not use_explain
     prep_statements = [] if args.with_geqo else ["SET geqo TO off;"]
-    query_config = runner.QueryPreparationService(explain=use_explain, analyze=use_analyze, prewarm=use_prewarm,
-                                                  preparatory_statements=prep_statements)
+    query_config = runner.QueryPreparationService(
+        explain=use_explain,
+        analyze=use_analyze,
+        prewarm=use_prewarm,
+        preparatory_statements=prep_statements,
+    )
 
     def update_stats(repetition: int) -> None:
         logger("Updating statistics for repetition", repetition)
         pg_instance.statistics().update_statistics(perfect_mcv=True)
-        target_file = f"{out_dir}/stats_dump_{bench_name}_{repetition+1}{outfile_suffix}.tar"
-        os.system(f"pg_dump --table=pg_statistic --format=t --file={target_file} {pg_instance.database_name()}")
+        target_file = (
+            f"{out_dir}/stats_dump_{bench_name}_{repetition + 1}{outfile_suffix}.tar"
+        )
+        os.system(
+            f"pg_dump --table=pg_statistic --format=t --file={target_file} {pg_instance.database_name()}"
+        )
 
     os.makedirs(out_dir, exist_ok=True)
     update_stats(-1)  # -1 results in index 0
-    result_df = runner.execute_workload(benchmark, pg_instance, workload_repetitions=repetitions, include_labels=True,
-                                        query_preparation=query_config, post_repetition_callback=update_stats, logger=logger)
+    result_df = runner.execute_workload(
+        benchmark,
+        pg_instance,
+        workload_repetitions=repetitions,
+        include_labels=True,
+        query_preparation=query_config,
+        post_repetition_callback=update_stats,
+        logger=logger,
+    )
     result_df = analysis.prepare_export(result_df)
-    result_df.to_csv(f"{out_dir}/pg-{bench_name}-analyze-stability{outfile_suffix}.csv", index=False)
+    result_df.to_csv(
+        f"{out_dir}/pg-{bench_name}-analyze-stability{outfile_suffix}.csv", index=False
+    )
 
 
 if __name__ == "__main__":
