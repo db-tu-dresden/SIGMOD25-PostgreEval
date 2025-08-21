@@ -255,7 +255,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    pg_instance = postgres.connect(connect_string=args.db_conn)
+    pg_instance = postgres.connect(config_file=args.db_conn)
 
     if args.workloads_dir:
         workloads.workloads_base_dir = args.workloads_dir
