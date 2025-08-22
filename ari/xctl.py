@@ -469,6 +469,15 @@ def evaluate_results(notebook: str) -> None:
     )
 
 
+def run_evaluation(exp: str, *, eval_notebooks: dict[str, str]) -> None:
+    notebook = eval_notebooks.get(exp)
+    if not notebook:
+        return
+
+    console("Evaluating results for experiment", exp)
+    evaluate_results(notebook)
+
+
 def main() -> None:
     experiments = {
         "0-base": experiment_native_runtimes,
@@ -484,7 +493,7 @@ def main() -> None:
         "2-distortion-ablation": "02-Distortion-Ablation",
         "3-plan-space": "03-Plan-Space",
         "4-analyze-stability": "04-Analyze-Stability",
-        "5-analyze-shift": "05-Analyze-Shift",
+        "5-analyze-shift": None,  # no core results for this experiment
         "6-beyond-textbook": "06-Beyond-Textbook",
     }
     benchmarks = ["job", "stats", "stack"]
@@ -549,9 +558,7 @@ def main() -> None:
             )
 
         if args.mode == "full" or args.mode == "eval":
-            console("Evaluating results for experiment", exp)
-            notebook = eval_notebooks[exp]
-            evaluate_results(notebook)
+            run_evaluation(exp, eval_notebooks=eval_notebooks)
 
 
 if __name__ == "__main__":
