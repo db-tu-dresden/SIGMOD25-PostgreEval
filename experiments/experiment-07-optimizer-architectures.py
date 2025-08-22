@@ -53,7 +53,7 @@ class ExperimentConfig:
     out_dir: str
 
 
-def update_database(conf: ExperimentConfig, *, disk_type: Optional[str]) -> None:
+def update_database(conf: ExperimentConfig, *, disk_type: Optional[str] = None) -> None:
     pg_instance = conf.pg_instance
     db_name = pg_instance.database_name()
     data_dir = pg_instance.execute_query("SHOW data_directory;", cache_enabled=False)
@@ -485,6 +485,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--disk-type",
+        default="",
         choices=["SSD", "HDD"],
         required=False,
         help="The disk type on which the Postgres DB is stored",
@@ -543,7 +544,7 @@ def main() -> None:
     if args.mode == "shift-only":
         os.makedirs(conf.out_dir, exist_ok=True)
         log(f"Setting up fresh {args.benchmark} instance")
-        update_database(conf)
+        update_database(conf, disk_type=args.disk_type)
         log("Performing manual data shift")
         manual_shift(conf, fill_factor=args.fill_factor)
         return
@@ -551,12 +552,12 @@ def main() -> None:
     if args.mode == "baseline" or args.mode == "full":
         os.makedirs(conf.out_dir, exist_ok=True)
         log(f"Setting up fresh {args.benchmark} instance")
-        update_database(conf)
+        update_database(conf, disk_type=args.disk_type)
         log("Obtaining baseline plans")
         obtain_baseline_plans(conf)
     if args.mode == "full":
         log("Resetting IMDB instance")
-        update_database(conf)
+        update_database(conf, disk_type=args.disk_type)
     if args.mode == "shift" or args.mode == "full":
         log("Simulating data shift")
         simulate_data_shift(conf)
