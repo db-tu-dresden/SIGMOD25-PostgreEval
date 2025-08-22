@@ -60,7 +60,13 @@ if [ -z "$(ls /ari)" ] ; then
         ./postgres-psycopg-setup.sh stack stack
         cp .psycopg_connection_stack /ari/
         cp .psycopg_connection_stack /ari/postbound/
+        rm -rf ../stack_data
     fi
+
+    cd /ari/pg_lab
+    ln -s ../postbound/postgres/workload-* .
+    ln -s /ari/postbound/imdb_data ..
+    ln -s /ari/postbound/stats_data ..
 
     echo "Loading default data sets..."
     cd /ari/datasets
