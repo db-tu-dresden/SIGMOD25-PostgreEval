@@ -427,6 +427,7 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
             "--experiments": ["native-fixed", "robust-fixed"],
             "--workloads-dir": "/ari/postbound/workloads",
             "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
+            "--disk-type": "SSD",
             "--out-dir": out_dir,
         },
         ["full"],
