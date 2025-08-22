@@ -455,7 +455,17 @@ def evaluate_results(notebook: str) -> None:
 
     subprocess.run(["jupyter", "execute", "--inplace", notebook_path])
     subprocess.run(
-        ["jupyter", "nbconvert", "--to", "pdf", "--output-dir", out_dir, notebook_path]
+        [
+            "jupyter",
+            "nbconvert",
+            "--to",
+            "pdf",
+            "--TagRemovePreprocessor.remove_cell_tags",
+            '{"hide"}',  # don't change the quoting. Otherwise, nbconvert won't recognize the tag
+            "--output-dir",
+            out_dir,
+            notebook_path,
+        ]
     )
 
 
