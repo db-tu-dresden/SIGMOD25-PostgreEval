@@ -5,6 +5,7 @@ import argparse
 import itertools
 import os
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -290,16 +291,7 @@ def experiment_plan_space_analysis(benchmark: Benchmarks) -> None:
         label=f"plan-space-analysis-{benchmark}-gaps",
     )
 
-
-def experiment_base_join_impact(benchmark: Benchmarks) -> None:
-    plan_space_dir = ResultsDir / "experiment-03-plan-space-analysis" / benchmark
-    if not plan_space_dir.exists():
-        raise FileNotFoundError(
-            f"Plan space analysis results for {benchmark} not found. "
-            "Please run the plan space analysis experiment first."
-        )
-
-    resample_file = plan_space_dir / f"{benchmark}-base-join-queries-f1.csv"
+    resample_file = out_dir / f"{benchmark}-base-join-queries-f1.csv"
     subprocess.run(
         [
             "python3",
@@ -311,14 +303,11 @@ def experiment_base_join_impact(benchmark: Benchmarks) -> None:
         ],
     )
 
-    out_dir = ResultsDir / "experiment-04-base-join-impact" / benchmark
-    out_dir.mkdir(parents=True, exist_ok=True)
-
     start_experiment(
         "experiment-04-base-join-impact.py",
         {
             "--target-queries": resample_file,
-            "--join-dir": plan_space_dir,
+            "--join-dir": out_dir,
             "--native-rts": ResultsDir / "base" / f"native-runtimes-{benchmark}.csv",
             "--out-dir": out_dir,
             "--workloads-dir": "/ari/postbound/workloads",
@@ -428,7 +417,7 @@ def experiment_analyze_stability_shift(benchmark: Benchmarks) -> None:
 
 
 def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
-    out_dir = ResultsDir / "experiment-04-beyond-textbook"
+    out_dir = ResultsDir / "experiment-07-beyond-textbook"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     start_experiment(
@@ -445,6 +434,18 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
     )
 
     reset_db(benchmark)
+
+
+def run_experiments(
+    exp: str, *, benchmarks: list[str], experiment_scripts: dict[str, Callable]
+) -> None:
+    executor = experiment_scripts[exp]
+    for bench in benchmarks:
+        if bench == "stack" and exp != "5-analyze-stability":
+            continue
+
+        console("Running experiment", exp, "for benchmark", bench)
+        executor(bench)
 
 
 def evaluate_results(notebook: str) -> None:
@@ -464,7 +465,6 @@ def main() -> None:
         "1-card-distortion": experiment_cardinality_distortion,
         "2-distortion-ablation": experiment_distortion_ablation,
         "3-plan-space": experiment_plan_space_analysis,
-        "4-base-join-impact": experiment_base_join_impact,
         "5-analyze-stability": experiment_analyze_stability,
         "6-analyze-shift": experiment_analyze_stability_shift,
         "7-beyond-textbook": experiment_architecture_ablation,
@@ -473,10 +473,9 @@ def main() -> None:
         "1-card-distortion": "01-Card-Distortion",
         "2-distortion-ablation": "02-Distortion-Ablation",
         "3-plan-space": "03-Plan-Space",
-        "4-base-join-impact": "04-Base-Joins",
-        "5-analyze-stability": "05-Analyze-Stability",
-        "6-analyze-shift": "06-Analyze-Shift",
-        "7-beyond-textbook": "07-Beyond-Textbook",
+        "4-analyze-stability": "04-Analyze-Stability",
+        "5-analyze-shift": "05-Analyze-Shift",
+        "6-beyond-textbook": "06-Beyond-Textbook",
     }
     benchmarks = ["job", "stats", "stack"]
 
@@ -511,8 +510,7 @@ def main() -> None:
         nargs="+",
         default=["all"],
         help="The experiments to execute. Can be any combination of experiments or all. "
-        "Note that experiment 4 requires the results from experiment 3 and "
-        "almost all experiments require the data from experiment 0.",
+        "Note that almost all experiments require the data from experiment 0.",
     )
 
     args = parser.parse_args()
@@ -533,12 +531,12 @@ def main() -> None:
         selected_experiments = args.experiment
 
     for exp in selected_experiments:
-        start_experiment = experiments[exp]
-
         if args.mode == "full" or args.mode == "data":
-            for bench in selected_benchmarks:
-                console("Running experiment", exp, "for benchmark", bench)
-                start_experiment(bench)
+            run_experiments(
+                exp,
+                benchmarks=selected_benchmarks,
+                experiment_scripts=experiments,
+            )
 
         if args.mode == "full" or args.mode == "eval":
             console("Evaluating results for experiment", exp)
