@@ -67,6 +67,7 @@ if [ -z "$(ls /ari)" ] ; then
     ln -s ../postbound/postgres/workload-* .
     ln -s /ari/postbound/imdb_data ..
     ln -s /ari/postbound/stats_data ..
+    ln -s /ari/postbound/postgres/postgres-config-generator.py .
 
     echo "Loading default data sets..."
     cd /ari/datasets
