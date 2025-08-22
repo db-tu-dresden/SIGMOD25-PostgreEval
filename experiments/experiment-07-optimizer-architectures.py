@@ -485,7 +485,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--disk-type",
-        choices=["ssd", "hdd"],
+        choices=["SSD", "HDD"],
         required=False,
         help="The disk type on which the Postgres DB is stored",
     )
