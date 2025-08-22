@@ -24,9 +24,13 @@ the latest versions available on Github. Both have been much improved since thei
 
 ## Reproducibility
 
-> [!note]
-> We will add further information regarding reproducibility, as well as an end-to-end experiment pipeline in time for the
-> SIGMOD ARI.
+Detailed information for reproducing the results of this paper are available in the `ari/` directory.
+As the name suggests, these are tailored for the
+[SIGMOD Availability and Reproducibility Initiative](https://reproducibility.sigmod.org/), but can also be used to reproduce
+the results in other contexts.
+In essence, the reproducibility pipeline performs all experiments of the original paper and evaluates the results of the core
+contributions.
+The entire pipeline is implemented in a single Docker container that does not require any user intervention once started.
 
 
 ## Errata
