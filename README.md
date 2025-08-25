@@ -27,7 +27,7 @@ The main difference is that the ARI notebooks are tailored to the specific requi
 For example, this pipeline does not need to distinguish between multiple servers during the evaluation.
 
 
-## Reproducibility
+## Availability & Reproducibility
 
 Detailed information for reproducing the results of this paper are available in the [`ari/` directory](https://github.com/db-tu-dresden/SIGMOD25-PostgreEval/blob/main/ari/README.md).
 As the name suggests, these are tailored for the
@@ -37,6 +37,8 @@ In essence, the reproducibility pipeline performs all experiments of the origina
 contributions.
 The entire pipeline is implemented in a single Docker container that does not require any user intervention once started.
 
+Regarding availability, take a look at the [Structure](#structure) to get an idea of the overall project structure. Each of
+the directories contains individual READMEs that explain the contents in more detail.
 
 ## Errata
 
