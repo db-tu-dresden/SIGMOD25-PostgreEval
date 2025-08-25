@@ -57,8 +57,8 @@ Core results include:
 1. both the randomized GEQO optimizer and different statistics samples cause different execution plans to be selected **(C6.1)**
 2. the different plans also impact the execution time by a significant amount **(C6.2)**
 
-We do not consider the data shift experiment performed for Section 6 does not constitute a core result and don't evaluate the
-raw data in the pipeline.
+We do not consider the data shift experiment performed for Section 6 to be a core result and don't evaluate the raw data in the
+pipeline.
 
 **Section 7 (Beyond Textbook Optimizers):** studied whether other optimizer architectures can be more resilient towards
 estimation errors.
@@ -75,7 +75,7 @@ For each of the experiments, we re-run the entire data generation step.
 Afterwards, we perform an evaluation specific to the current core result.
 This includes re-generating the plots for each query (if the paper contained plots on a per-query basis).
 If the paper contained an aggregated plot for a core result, we also generate this plot.
-Lastly, we determine _replacement plots_ that we show in the final PDF.
+Lastly, we determine _replacement plots_ that are shown in the final PDF.
 This last step is necessary, because the original per-query plots were manually picked to illustrate specific phenomena.
 For example, Figure 3(b) in the paper showed an example of a query with an unstable plan selection behavior.
 However, the individual queries that are affected differ between systems (as discussed in the paper).
