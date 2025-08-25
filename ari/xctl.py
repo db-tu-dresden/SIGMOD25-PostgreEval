@@ -485,11 +485,12 @@ def main() -> None:
         "1-card-distortion": experiment_cardinality_distortion,
         "2-distortion-ablation": experiment_distortion_ablation,
         "3-plan-space": experiment_plan_space_analysis,
-        "5-analyze-stability": experiment_analyze_stability,
-        "6-analyze-shift": experiment_analyze_stability_shift,
-        "7-beyond-textbook": experiment_architecture_ablation,
+        "4-analyze-stability": experiment_analyze_stability,
+        "5-analyze-shift": experiment_analyze_stability_shift,
+        "6-beyond-textbook": experiment_architecture_ablation,
     }
     eval_notebooks = {
+        "0-base": None,  # no core results for this experiment
         "1-card-distortion": "01-Card-Distortion",
         "2-distortion-ablation": "02-Distortion-Ablation",
         "3-plan-space": "03-Plan-Space",
@@ -506,9 +507,9 @@ def main() -> None:
         "--mode",
         type=str,
         action="store",
-        choices=["full", "data", "eval"],
+        choices=["full", "experiments", "eval"],
         default="full",
-        help="Whether to only gather the experiment results (data), "
+        help="Whether to only gather the experiment results (experiments), "
         "evaluate the results from a previous run (eval), "
         "or do both (full).",
     )
@@ -549,16 +550,22 @@ def main() -> None:
         selected_experiments = experiments.keys()
     else:
         selected_experiments = args.experiment
+    console("Selected experiments:", selected_experiments)
+
+    if args.mode == "full":
+        tasks = ["experiments", "eval"]
+    else:
+        tasks = [args.mode]
 
     for exp in selected_experiments:
-        if args.mode == "full" or args.mode == "data":
+        if "experiments" in tasks:
             run_experiments(
                 exp,
                 benchmarks=selected_benchmarks,
                 experiment_scripts=experiments,
             )
 
-        if args.mode == "full" or args.mode == "eval":
+        if "eval" in tasks:
             run_evaluation(exp, eval_notebooks=eval_notebooks)
 
 
