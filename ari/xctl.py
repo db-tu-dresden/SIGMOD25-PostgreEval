@@ -417,7 +417,7 @@ def experiment_analyze_stability_shift(benchmark: Benchmarks) -> None:
 
 
 def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
-    out_dir = ResultsDir / "experiment-07-beyond-textbook"
+    out_dir = ResultsDir / "experiment-07-beyond-textbook" / benchmark
     out_dir.mkdir(parents=True, exist_ok=True)
 
     start_experiment(
@@ -495,7 +495,7 @@ def main() -> None:
         "3-plan-space": "03-Plan-Space",
         "4-analyze-stability": "04-Analyze-Stability",
         "5-analyze-shift": None,  # no core results for this experiment
-        "6-beyond-textbook": "06-Beyond-Textbook",
+        "6-beyond-textbook": "05-Beyond-Textbook",
     }
     benchmarks = ["job", "stats", "stack"]
 
