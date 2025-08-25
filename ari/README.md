@@ -152,9 +152,11 @@ The pipeline creates three kinds of artifacts:
 1. Raw result data from all experiments. These are different CSV files located in subdirectories like
    `experiment-01-cardinality-distortion`.
 2. Plots and summaries that should (hopefully) confirm all core results of the paper. These are available as PDF files in the
-   `eval/summaries` subdirectory.
+   `eval/summaries` subdirectory. **Ideally, the PDFs are the only results that reviewers need to take a look at.**
 3. Plots for all core results that used individual queries for illustration (e.g., Figure 3 in the paper). These are placed
    in individual subdirectories (similar to the raw results), but in the `eval/` subdirectory (similar to the sumary PDFs).
+
+Below is a detailed list of all relevant file locations:
 
 | Core result | Raw experiment data | Individual plots | Final PDF |
 | ----------- | ------------------- | ---------------- | --------- |
