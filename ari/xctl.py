@@ -547,7 +547,7 @@ def main() -> None:
     console("Selected benchmarks:", selected_benchmarks)
 
     if "all" in args.experiment:
-        selected_experiments = experiments.keys()
+        selected_experiments = list(experiments.keys())
     else:
         selected_experiments = args.experiment
     console("Selected experiments:", selected_experiments)
