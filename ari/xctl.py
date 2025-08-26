@@ -424,7 +424,7 @@ def experiment_architecture_ablation(benchmark: Benchmarks) -> None:
         "experiment-07-optimizer-architectures.py",
         {
             "--benchmark": benchmark,
-            "--experiments": ["native-fixed", "robust-fixed"],
+            "--experiments": ["native", "native-fixed", "robust-fixed"],
             "--workloads-dir": "/ari/postbound/workloads",
             "--db-conn": f"/ari/.psycopg_connection_{benchmark}",
             "--disk-type": "SSD",

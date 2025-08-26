@@ -18,8 +18,18 @@ Therefore, we limit the scope of our reproducibility efforts to a subset of the 
 We describe and justify our approach in the remainder of this section.
 Please note that the reproducibility pipeline is capable of reproducing all the results, but the default ARI
 configuration (as detailed in the [Setup](#setup)) just focuses on the core contributions.
-Most importantly, by default we only reproduce results on the Join Order Benchmark. The Stats benchmark can be activated if
-desired, but this will increase the runtime of the entire pipeline by a significant amount.
+Most importantly, by default we only reproduce results on the Join Order Benchmark.
+The Stats benchmark can be activated if desired, but this will increase the runtime of the entire pipeline by a significant
+amount.
+
+The pipeline generates plots for all original figures from the paper.
+However, some figures contained plots for different hardware platforms or different workloads.
+We do not re-create these figures on a 1:1 basis.
+Most importantly, we only re-create figures on a single benchmark (JOB), instead of all benchmarks that have been used in the
+paper (JOB, Stats).
+The different benchmarks were used to aid in generalizing the results.
+We argue that this is still possible if the results have be reproduced on an entirely different hardware platform.
+Hence, the core results are not affected by this decision.
 
 ## Core Results
 
@@ -97,7 +107,8 @@ To run the ARI pipeline, please use a machine with the following hardware specif
 The server should run a recent Linux system with Docker v28.3.0 (other installations should work, we simply could not test
 them).
 
-Running the entire ARI pipeline took us about 16 days on a machine with an Intel Xeon Gold 6240R CPU (24 cores @ 2.4GHz) and 755GB of RAM.
+Running the entire ARI pipeline took us about 16 days on a machine with an Intel Xeon Gold 6240R CPU (24 cores @ 2.4GHz) and
+755GB of RAM.
 If you want to reproduce results on the Stack benchmark, you should have at least 500GB of available SSD storage.
 
 # Setup
