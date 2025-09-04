@@ -71,7 +71,8 @@ if [ -z "$(ls /ari)" ] ; then
 
     echo "Loading default data sets..."
     cd /ari/datasets
-    ./load-dataset.sh base
+    wget -O 00-base.zip https://db4701.inf.tu-dresden.de:8443/public.php/dav/files/j7AQnAZTGEEPPPT
+    unzip 00-base.zip
 
     echo "cd /ari/pg_lab && source postgres-load-env.sh" >> /home/$USERNAME/.bashrc
     echo "cd /ari/postbound && source pb-venv/bin/activate" >> /home/$USERNAME/.bashrc
