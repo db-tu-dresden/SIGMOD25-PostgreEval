@@ -79,8 +79,15 @@ if [ -z "$(ls /ari)" ] ; then
 
     echo "Setup done. You can now reproduce individual experiments from the paper."
 else
+    
+    echo "Existing files detected. Skipping setup..."
+    echo "Starting Postgres server..."
+    
     cd /ari/pg_lab
     . ./postgres-start.sh
+    
+    echo "Container is ready..."
+
 fi
 
 tail -f /dev/null
